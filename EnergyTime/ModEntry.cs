@@ -97,6 +97,11 @@ namespace EnergyTime
             float currentStamina = Game1.player.Stamina;
             if (currentStamina == this.LastStamina)
                 return;
+            else if (currentStamina - this.LastStamina > 0)
+            {
+                this.LastStamina = currentStamina;
+                return;
+            }
 
             float usedStamina = this.StaminaUsed + this.LastStamina - currentStamina;
             //this.Monitor.Log($"{this.LastStamina} {currentStamina} | Used: {usedStamina}", LogLevel.Debug);
