@@ -8,12 +8,22 @@ This mod lets time pass proportionally to your energy usage. You can also fast f
 
 The inspiration for this mod comes from the relaxed feeling when there is no time constraint in games like Littlewood. I always found myself modifying the default time passage, often freezing it as a result. In the end, I prefer the approach in games like Littlewood and wanted something similar for Stardew hence this mod.
 
+### Multiplayer
+
+Multiplayer functionality is in testing at the moment.
+
+All players stamina is pooled together for calculations. Whenever a player joins or leaves the game, the base factor for time passing is calculated and reset.
+
+In theory, this could allow for an infinite day exploit if a player keeps leaving and rejoining since it also resets the stamina used value, but this seems like a lot of effort for an exploit.
+
+Only the host can pass time via the pass time shortcut during a multiplayer game.
+
 ### Configuration Options
 
 Configuration options are listed below, with their default values.
 
 ```
-  "EnergyRequirementMultiplier": 1,
+  "EnergyRequirementMultiplier": 4.0,
   "PassTimeKey": "U"
 ```
 
