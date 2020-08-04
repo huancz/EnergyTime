@@ -4,7 +4,7 @@ namespace EnergyTime
 {
     internal class ModConfig
     {
-        public double EnergyRequirementMultiplier { get; set; } = 4.0;
+        public float EnergyRequirementMultiplier { get; set; } = 2.0F;
         public SButton PassTimeKey { get; set; } = SButton.U;
     }
 }

@@ -16,7 +16,7 @@ namespace EnergyTime
 
         private ModConfig Config;
         private bool IsPassingTime = false;
-        private const int TargetIntervals = 150;
+        private const float TargetIntervals = 150;
         private float UpdateStaminaDelta;
         private float LastStamina;
         private float StaminaUsed;
@@ -218,11 +218,11 @@ namespace EnergyTime
         private void CalculateTimePassage(int tickInterval)
         {
             float usedStamina = this.NextUsedStamina();
-            float requirement = (float)(this.UpdateStaminaDelta * this.Config.EnergyRequirementMultiplier);
+            float requirement = this.UpdateStaminaDelta * this.Config.EnergyRequirementMultiplier;
             if (usedStamina > requirement)
             {
                 Game1.gameTimeInterval = tickInterval;
-                this.StaminaUsed = 0;
+                this.StaminaUsed = usedStamina % requirement;
             }
             else
                 this.StaminaUsed = usedStamina;
