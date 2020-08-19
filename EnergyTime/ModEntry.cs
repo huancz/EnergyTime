@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Input;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewModdingAPI.Utilities;
@@ -16,12 +16,14 @@ namespace EnergyTime
 
         private ModConfig Config;
         private bool IsPassingTime = false;
+        private bool IsTimePaused = false;
         private const float TargetIntervals = 150;
+        private float StatefulEnergyRequirementMultiplier;
         private float UpdateStaminaDelta;
         private float LastStamina;
         private float StaminaUsed;
-        private Dictionary<long, float> MultiplayerLastStamina = new Dictionary<long, float>(); 
-        
+        private Dictionary<long, float> MultiplayerLastStamina = new Dictionary<long, float>();
+
 
         /*********
         ** Public methods
@@ -29,7 +31,7 @@ namespace EnergyTime
         public override void Entry(IModHelper helper)
         {
             // read config
-            this.Config = helper.ReadConfig<ModConfig>();
+            this.ReloadConfig();
 
             // set initial values
             this.StaminaUsed = 0;
@@ -45,6 +47,20 @@ namespace EnergyTime
             helper.Events.GameLoop.DayStarted += this.OnDayStarted;
             helper.Events.Multiplayer.PeerConnected += this.OnPeerConnected;
             helper.Events.Multiplayer.PeerDisconnected += this.OnPeerDisconnected;
+
+            {
+                bool wasPaused = false;
+                helper.Events.Display.RenderingHud += (sender, args) =>
+                {
+                    wasPaused = Game1.paused;
+                    if (this.IsTimePaused) Game1.paused = true;
+                };
+
+                helper.Events.Display.RenderedHud += (sender, args) =>
+                {
+                    Game1.paused = wasPaused;
+                };
+            }
         }
 
 
@@ -53,15 +69,81 @@ namespace EnergyTime
         *********/
 
         // Effectful.
+        // Draws on Game1 HUD
+        private void SendHUDMessage(String message)
+        {
+            Game1.hudMessages.Add(new HUDMessage(message, 2) { timeLeft = 2000 });
+        }
+
+        // Effectful.
+        // Updates
+        // - this.Config
+        // - this.StatefulEnergyRequirementMultiplier
+        private void ReloadConfig()
+        {
+            this.Config = this.Helper.ReadConfig<ModConfig>();
+            this.StatefulEnergyRequirementMultiplier = this.Config.EnergyRequirementMultiplier;
+            this.SendHUDMessage("EnergyTime mod config reloaded");
+        }
+
+        // Effectful.
+        // Updates
+        // - this.StatefulEnergyRequirementMultiplier
+        private void ChangeEnergyRequirementMultiplier(bool shouldIncrease)
+        {
+            float change = 0.1F;
+            {
+                KeyboardState state = Keyboard.GetState();
+                if (state.IsKeyDown(Keys.LeftShift))
+                    change *= 10;
+                else if (state.IsKeyDown(Keys.LeftAlt))
+                    change /= 10;
+            }
+
+            if (!shouldIncrease)
+            {
+                float minAllowed = 0F;
+                this.StatefulEnergyRequirementMultiplier = Math.Max(minAllowed, this.StatefulEnergyRequirementMultiplier - change);
+            }
+            else
+                this.StatefulEnergyRequirementMultiplier = this.StatefulEnergyRequirementMultiplier + change;
+
+            this.SendHUDMessage($"Energy multiplier changed to {this.StatefulEnergyRequirementMultiplier}");
+        }
+
+        // Effectful.
+        // Draws on Game1 HUD
+        // Updates
+        // - this.IsTimePaused
+        private void TimePauseToggle()
+        {
+            this.IsTimePaused = !this.IsTimePaused;
+            if (this.IsTimePaused)
+                this.SendHUDMessage("Time has been paused...");
+            else
+                this.SendHUDMessage("Time has been unpaused");
+        }
+
+        // Effectful.
         // Updates
         // - this.IsPassingTime
+        // - this.Config
+        // - this.StatefulEnergyRequirementMultiplier
         private void OnButtonPressed(object sender, ButtonPressedEventArgs e)
         {
             if (!this.IsMainPlayerReady())
                 return;
 
-            if (e.Button == this.Config.PassTimeKey)
+            SButton key = e.Button;
+
+            if (key == this.Config.PassTimeKey)
                 this.IsPassingTime = true;
+            else if (key == this.Config.PauseTimeKey)
+                this.TimePauseToggle();
+            else if (key == this.Config.ReloadConfigKey)
+                this.ReloadConfig();
+            else if (key == this.Config.IncreaseMultiplierKey || key == this.Config.DecreaseMultiplierKey)
+                this.ChangeEnergyRequirementMultiplier(shouldIncrease: key == Config.IncreaseMultiplierKey);
         }
 
         // Effectful.
@@ -191,7 +273,7 @@ namespace EnergyTime
                 return;
 
             this.LastStamina = this.GetCurrentStamina();
-            this.UpdateStaminaDelta = DetermineUpdateDelta();
+            this.UpdateStaminaDelta = this.DetermineUpdateDelta();
             this.StaminaUsed = 0;
         }
 
@@ -218,7 +300,7 @@ namespace EnergyTime
         private void CalculateTimePassage(int tickInterval)
         {
             float usedStamina = this.NextUsedStamina();
-            float requirement = this.UpdateStaminaDelta * this.Config.EnergyRequirementMultiplier;
+            float requirement = this.UpdateStaminaDelta * this.StatefulEnergyRequirementMultiplier;
             if (usedStamina > requirement)
             {
                 Game1.gameTimeInterval = tickInterval;
@@ -236,22 +318,25 @@ namespace EnergyTime
                 return;
 
             int tickInterval = this.CurrentTickInterval();
-            ManualPassTime(tickInterval);
-            CalculateTimePassage(tickInterval);            
+            this.ManualPassTime(tickInterval);
+            if (this.IsTimePaused)
+                this.NextUsedStamina();
+            else
+                this.CalculateTimePassage(tickInterval);            
         }
 
         // Effectful
         // Calls side effectful methods
         private void OnSaveLoaded(object sender, EventArgs e)
         {
-            ResetUpdateStaminaDelta();
+            this.ResetUpdateStaminaDelta();
         }
 
         // Effectful
         // Calls side effectful methods
         private void OnDayStarted(object sender, EventArgs e)
         {
-            ResetUpdateStaminaDelta();
+            this.ResetUpdateStaminaDelta();
         }
 
         // Effectful
@@ -263,7 +348,7 @@ namespace EnergyTime
             long playerID = e.Peer.PlayerID;
             float playerStamina = Game1.getFarmer(playerID).Stamina;
             this.MultiplayerLastStamina.Add(playerID, playerStamina);
-            ResetUpdateStaminaDelta();
+            this.ResetUpdateStaminaDelta();
         }
 
         // Effectful
@@ -273,7 +358,7 @@ namespace EnergyTime
         private void OnPeerDisconnected(object sender, PeerDisconnectedEventArgs e)
         {
             this.MultiplayerLastStamina.Remove(e.Peer.PlayerID);
-            ResetUpdateStaminaDelta();
+            this.ResetUpdateStaminaDelta();
         }
     }
 }
