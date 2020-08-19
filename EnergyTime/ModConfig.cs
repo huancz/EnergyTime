@@ -10,5 +10,6 @@ namespace EnergyTime
         public SButton ReloadConfigKey { get; set; } = SButton.B;
         public SButton IncreaseMultiplierKey { get; set; } = SButton.OemPeriod;
         public SButton DecreaseMultiplierKey { get; set; } = SButton.OemComma;
+        public SButton TimeModeToggleKey { get; set; } = SButton.OemSemicolon;
     }
 }

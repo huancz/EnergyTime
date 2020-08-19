@@ -15,10 +15,13 @@ The inspiration for this mod comes from the relaxed feeling when there is no tim
 Default controls below:
 
 - `U`: hold key down fast forward time
-- `N`: freeze or unfreeze time
+- `N`: pause or unpause time
 - `B`: reload the config settings from file
 - `.`: increase the energy requirement multiplier by 0.1. Combine with Shift to increase by 1.0, or Alt to increase by 0.01
 - `,`: decrease the energy requirement multiplier by 0.1. Combine with Shift to decrease by 1.0, or Alt to decrease by 0.01
+- ';': toggle between Vanilla Time and Energy Time
+
+While in Vanilla Time, time will pass by normally, unless you are holding U to fast forward, or have paused time with N (default keybindings, may differ given your configuration).
 
 ### Multiplayer
 
@@ -40,7 +43,8 @@ The default key bindings are meant to match the TimeSpeed (https://www.nexusmods
   "PauseTimeKey": "N",
   "ReloadConfigKey": "B",
   "IncreaseMultiplierKey": ".",
-  "DecreaseMultiplierKey": ","
+  "DecreaseMultiplierKey": ",",
+  "TimeModeToggleKey": ";"
 ```
 
 To modify how quickly your energy depletion makes time pass, tweak the `EnergyRequirementMultiplier` configuration value. The higher the value, the more energy must be expended for a 10 minute tick to pass.

@@ -17,13 +17,13 @@ namespace EnergyTime
         private ModConfig Config;
         private bool IsPassingTime = false;
         private bool IsTimePaused = false;
+        private bool IsEnergyTime = true;
         private const float TargetIntervals = 150;
         private float StatefulEnergyRequirementMultiplier;
         private float UpdateStaminaDelta;
         private float LastStamina;
         private float StaminaUsed;
         private Dictionary<long, float> MultiplayerLastStamina = new Dictionary<long, float>();
-
 
         /*********
         ** Public methods
@@ -83,7 +83,7 @@ namespace EnergyTime
         {
             this.Config = this.Helper.ReadConfig<ModConfig>();
             this.StatefulEnergyRequirementMultiplier = this.Config.EnergyRequirementMultiplier;
-            this.SendHUDMessage("EnergyTime mod config reloaded");
+            this.SendHUDMessage(Helper.Translation.Get("energy-time.reloaded"));
         }
 
         // Effectful.
@@ -108,7 +108,7 @@ namespace EnergyTime
             else
                 this.StatefulEnergyRequirementMultiplier = this.StatefulEnergyRequirementMultiplier + change;
 
-            this.SendHUDMessage($"Energy multiplier changed to {this.StatefulEnergyRequirementMultiplier}");
+            this.SendHUDMessage(Helper.Translation.Get("energy-time.multiplier-changed", new { multiplier = this.StatefulEnergyRequirementMultiplier }));
         }
 
         // Effectful.
@@ -119,9 +119,22 @@ namespace EnergyTime
         {
             this.IsTimePaused = !this.IsTimePaused;
             if (this.IsTimePaused)
-                this.SendHUDMessage("Time has been paused...");
+                this.SendHUDMessage(Helper.Translation.Get("energy-time.paused"));
             else
-                this.SendHUDMessage("Time has been unpaused");
+                this.SendHUDMessage(Helper.Translation.Get("energy-time.unpaused"));
+        }
+
+        // Effectful.
+        // Draws on Game1 HUD
+        // Updates
+        // - this.IsEnergyTime
+        private void TimeModeToggle()
+        {
+            this.IsEnergyTime = !this.IsEnergyTime;
+            if (this.IsEnergyTime)
+                this.SendHUDMessage(Helper.Translation.Get("energy-time.energy-time-mode"));
+            else
+                this.SendHUDMessage(Helper.Translation.Get("energy-time.vanilla-mode"));
         }
 
         // Effectful.
@@ -144,6 +157,8 @@ namespace EnergyTime
                 this.ReloadConfig();
             else if (key == this.Config.IncreaseMultiplierKey || key == this.Config.DecreaseMultiplierKey)
                 this.ChangeEnergyRequirementMultiplier(shouldIncrease: key == Config.IncreaseMultiplierKey);
+            else if (key == this.Config.TimeModeToggleKey)
+                this.TimeModeToggle();
         }
 
         // Effectful.
@@ -288,7 +303,7 @@ namespace EnergyTime
                 Game1.gameTimeInterval += ffTimeInterval;
                 return;
             }
-            else
+            else if (this.IsEnergyTime || this.IsTimePaused)
                 Game1.gameTimeInterval = 0;
         }
 
@@ -319,7 +334,7 @@ namespace EnergyTime
 
             int tickInterval = this.CurrentTickInterval();
             this.ManualPassTime(tickInterval);
-            if (this.IsTimePaused)
+            if (this.IsTimePaused || !this.IsEnergyTime)
                 this.NextUsedStamina();
             else
                 this.CalculateTimePassage(tickInterval);            
