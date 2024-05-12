@@ -1,3 +1,5 @@
+This is just a fork for unofficial update, go to https://gitlab.com/nikperic/energytime for main repository
+
 ## EnergyTime
 
 [NexusMods Page](https://www.nexusmods.com/stardewvalley/mods/6488)
