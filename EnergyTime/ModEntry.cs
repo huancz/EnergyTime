@@ -179,7 +179,7 @@ namespace EnergyTime
         // Pure
         private int CurrentTickInterval()
         {
-            return 7000 + (Game1.currentLocation?.getExtraMillisecondsPerInGameMinuteForThisLocation() ?? 0);
+            return 7000 + (Game1.currentLocation?.ExtraMillisecondsPerInGameMinute ?? 0);
         }
 
         // Effectful.
