@@ -179,7 +179,10 @@ namespace EnergyTime
         // Pure
         private int CurrentTickInterval()
         {
-            return 7000 + (Game1.currentLocation?.ExtraMillisecondsPerInGameMinute ?? 0);
+            var extra = Game1.currentLocation?.ExtraMillisecondsPerInGameMinute ?? 0;
+            // extra is per 1 minute, we want 10 minutes to pass. See Game1.UpdateGameClock
+            extra *= 10;
+            return Game1.realMilliSecondsPerGameTenMinutes + extra;
         }
 
         // Effectful.
